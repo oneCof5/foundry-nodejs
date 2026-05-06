@@ -27,10 +27,18 @@ Exec @("pull", $Remote, $Branch)
 
 Write-Host "`nChecking if tag '$Version' exists..." -ForegroundColor Yellow
 $tagExists = $false
-git rev-parse "$Version" 2>$null | Out-Null
-if ($LASTEXITCODE -eq 0) { 
-    $tagExists = $true 
-    Write-Host "Tag '$Version' already exists." -ForegroundColor Yellow
+try {
+    git rev-parse "$Version" *>$null
+    if ($LASTEXITCODE -eq 0) { 
+        $tagExists = $true 
+        Write-Host "Tag '$Version' already exists." -ForegroundColor Yellow
+    }
+} catch {
+    # Tag doesn't exist, which is fine
+}
+
+if (-not $tagExists) {
+    Write-Host "Tag '$Version' does not exist (ready to create)." -ForegroundColor Green
 }
 
 if ($tagExists -and -not $ForceTag) {
@@ -52,7 +60,7 @@ Exec @("push", $Remote, $Branch)
 Write-Host "`nPushing tag '$Version'..." -ForegroundColor Yellow
 Exec @("push", $Remote, $Version)
 
-Write-Host "`n✓ Success! Tag $Version pushed to $Remote." -ForegroundColor Green
+Write-Host "`nSuccess! Tag $Version pushed to $Remote." -ForegroundColor Green
 Write-Host "The GitHub Actions workflows will now:" -ForegroundColor Green
 Write-Host "  1. Build and push the Docker image to GHCR" -ForegroundColor Green
 Write-Host "  2. Create a GitHub Release for $Version" -ForegroundColor Green
