@@ -11,9 +11,9 @@ param(
 $ErrorActionPreference = "Stop"
 
 function Exec {
-    param([string[]]$Args)
+    param([string[]]$GitArgs)
     Write-Host "`n> git $($Args -join ' ')"
-    & git @Args
+    & git @GitArgs
     if ($LASTEXITCODE -ne 0) { throw "git command failed: git $($Args -join ' ')" }
 }
 
