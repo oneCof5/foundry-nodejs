@@ -1,0 +1,14 @@
+name: Publish release image and create release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  call-reusable:
+    uses: ./.github/workflows/reusable-publish-release.yml
+    with:
+      version_prefix: "v"
+      image_name: ${{ github.repository }}
+    secrets: inherit
