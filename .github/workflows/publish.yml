@@ -1,4 +1,4 @@
-name: Publish release image and create release
+name: Publish release image and create release using the same tags
 
 on:
   push:
