@@ -3,25 +3,56 @@ set -euo pipefail
 
 VERSION="${1:?version required}"
 
-: "${APP_ROOT:=/foundry/FVTT}"
-: "${DATA_ROOT:=/foundry/Data}"
-: "${CONFIG_ROOT:=/foundry/Config}"
-: "${LOG_ROOT:=/foundry/Logs}"
+: "${HOME:=/home/foundry}"
 : "${FOUNDRY_PORT:=30000}"
 : "${FOUNDRY_WORLD_ID:=}"
 : "${FOUNDRY_ADMIN_PASSWORD:=}"
+: "${FOUNDRY_LICENSE_KEY:=}"
 
-APP_DIR="${APP_ROOT}/foundryvtt-${VERSION}"
+FVTT_APP_DIR="$HOME/foundryvtt"
+FVTT_DATA_DIR="$HOME/foundrydata"
+CONFIG_DIR="$FVTT_DATA_DIR/Config"
+LOGS_DIR="$FVTT_DATA_DIR/Logs"
 
-mkdir -p "$DATA_ROOT/Config" "$LOG_ROOT"
-
-if [ -n "$FOUNDRY_ADMIN_PASSWORD" ] && [ ! -f "$DATA_ROOT/Config/admin.txt" ]; then
-  printf '%s' "$FOUNDRY_ADMIN_PASSWORD" > "$DATA_ROOT/Config/admin.txt"
+if [ ! -f "$FVTT_APP_DIR/main.js" ]; then
+  echo "Error: Foundry VTT installation not found at ${FVTT_APP_DIR}" >&2
+  exit 1
 fi
 
-exec node "$APP_DIR/main.js" \
-  --dataPath="$DATA_ROOT" \
+mkdir -p "$CONFIG_DIR" "$LOGS_DIR"
+
+# Set admin password if provided
+if [ -n "$FOUNDRY_ADMIN_PASSWORD" ] && [ ! -f "$CONFIG_DIR/admin.txt" ]; then
+  echo "Setting administrator password..."
+  printf '%s' "$FOUNDRY_ADMIN_PASSWORD" > "$CONFIG_DIR/admin.txt"
+fi
+
+# Set license key if provided
+if [ -n "$FOUNDRY_LICENSE_KEY" ]; then
+  echo "Configuring license key..."
+  cat > "$CONFIG_DIR/license.json" <<EOF
+{
+  "license": "${FOUNDRY_LICENSE_KEY}"
+}
+EOF
+fi
+
+echo "───────────────────────────────────────"
+echo "Starting Foundry VTT ${VERSION}..."
+echo "Port: ${FOUNDRY_PORT}"
+echo "Data Path: ${FVTT_DATA_DIR}"
+if [ -n "$FOUNDRY_WORLD_ID" ]; then
+  echo "World: ${FOUNDRY_WORLD_ID}"
+fi
+echo "───────────────────────────────────────"
+echo "Access Foundry at http://your-server:${FOUNDRY_PORT}"
+echo "───────────────────────────────────────"
+
+# Change to foundryvtt directory and start (following official instructions)
+cd "$FVTT_APP_DIR"
+
+# Start running the server (FoundryVTT V13 and newer)
+exec node main.js \
+  --dataPath="$FVTT_DATA_DIR" \
   --port="$FOUNDRY_PORT" \
-  ${FOUNDRY_WORLD_ID:+--world="$FOUNDRY_WORLD_ID"} \
-  ${FOUNDRY_ADMIN_PASSWORD:+--adminPassword="$FOUNDRY_ADMIN_PASSWORD"} \
-  >>"$LOG_ROOT/foundry.log" 2>&1
+  ${FOUNDRY_WORLD_ID:+--world="$FOUNDRY_WORLD_ID"}

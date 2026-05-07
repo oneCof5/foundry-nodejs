@@ -1,10 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${APP_ROOT:=/foundry/FVTT}"
-: "${DATA_ROOT:=/foundry/Data}"
-: "${CONFIG_ROOT:=/foundry/Config}"
-: "${LOG_ROOT:=/foundry/Logs}"
+: "${HOME:=/home/foundry}"
 : "${FOUNDRY_VERSION:=14.161}"
 : "${FOUNDRY_KEEP_PRIOR:=5}"
 : "${FOUNDRY_PORT:=30000}"
@@ -13,20 +10,44 @@ set -euo pipefail
 : "${FOUNDRY_EMAIL_FILE:=/run/secrets/foundry_email}"
 : "${FOUNDRY_PASSWORD_FILE:=/run/secrets/foundry_password}"
 : "${FOUNDRY_ADMIN_PASSWORD_FILE:=/run/secrets/foundry_admin_password}"
-: "${FOUNDRY_ZIP_DIR:=/foundry/FVTT}"
 : "${FOUNDRY_ZIP_URL:=}"
-: "${FOUNDRY_LOGIN_COOKIE:=}"
 
 read_secret() {
   local f="$1"
-  if [ -f "$f" ]; then cat "$f"; else printf '%s' "${2:-}"; fi
+  local env_var="${2:-}"
+  if [ -f "$f" ]; then 
+    cat "$f"
+  elif [ -n "$env_var" ]; then
+    printf '%s' "$env_var"
+  else
+    printf ''
+  fi
 }
 
-FOUNDRY_LICENSE_KEY="$(read_secret "$FOUNDRY_LICENSE_KEY_FILE" "${FOUNDRY_LICENSE_KEY:-}")"
-FOUNDRY_EMAIL="$(read_secret "$FOUNDRY_EMAIL_FILE" "${FOUNDRY_EMAIL:-}")"
-FOUNDRY_PASSWORD="$(read_secret "$FOUNDRY_PASSWORD_FILE" "${FOUNDRY_PASSWORD:-}")"
-FOUNDRY_ADMIN_PASSWORD="$(read_secret "$FOUNDRY_ADMIN_PASSWORD_FILE" "${FOUNDRY_ADMIN_PASSWORD:-}")"
+export FOUNDRY_LICENSE_KEY="$(read_secret "$FOUNDRY_LICENSE_KEY_FILE" "${FOUNDRY_LICENSE_KEY:-}")"
+export FOUNDRY_EMAIL="$(read_secret "$FOUNDRY_EMAIL_FILE" "${FOUNDRY_EMAIL:-}")"
+export FOUNDRY_PASSWORD="$(read_secret "$FOUNDRY_PASSWORD_FILE" "${FOUNDRY_PASSWORD:-}")"
+export FOUNDRY_ADMIN_PASSWORD="$(read_secret "$FOUNDRY_ADMIN_PASSWORD_FILE" "${FOUNDRY_ADMIN_PASSWORD:-}")"
 
-echo "Starting Foundry VTT version management..."
+# Change to home directory (following official instructions)
+cd "$HOME"
 
-exec /opt/foundry/scripts/manage-version.sh
+echo "Checking Foundry VTT installation..."
+
+# Check if the requested version is already installed
+INSTALLED_VERSION_FILE="$HOME/foundryvtt/.version"
+if [ -f "$INSTALLED_VERSION_FILE" ]; then
+  INSTALLED_VERSION="$(cat "$INSTALLED_VERSION_FILE")"
+else
+  INSTALLED_VERSION=""
+fi
+
+if [ "$INSTALLED_VERSION" = "$FOUNDRY_VERSION" ] && [ -f "$HOME/foundryvtt/main.js" ]; then
+  echo "Foundry VTT ${FOUNDRY_VERSION} is already installed."
+else
+  echo "Installing Foundry VTT ${FOUNDRY_VERSION}..."
+  /opt/foundry/scripts/install-foundry.sh "$FOUNDRY_VERSION"
+  echo "$FOUNDRY_VERSION" > "$INSTALLED_VERSION_FILE"
+fi
+
+exec /opt/foundry/scripts/run-foundry.sh "$FOUNDRY_VERSION"

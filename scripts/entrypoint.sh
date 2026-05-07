@@ -3,10 +3,7 @@ set -euo pipefail
 
 : "${PUID:=911}"
 : "${PGID:=911}"
-: "${APP_ROOT:=/foundry/FVTT}"
-: "${DATA_ROOT:=/foundry/Data}"
-: "${CONFIG_ROOT:=/foundry/Config}"
-: "${LOG_ROOT:=/foundry/Logs}"
+: "${HOME:=/home/foundry}"
 : "${FOUNDRY_VERSION:=14.161}"
 : "${FOUNDRY_KEEP_PRIOR:=5}"
 : "${FOUNDRY_PORT:=30000}"
@@ -17,6 +14,7 @@ echo "────────────────────────�
 echo "User UID:    $PUID"
 echo "User GID:    $PGID"
 echo "Version:     $FOUNDRY_VERSION"
+echo "Home:        $HOME"
 echo "───────────────────────────────────────"
 
 # Update foundry user to match PUID/PGID
@@ -33,11 +31,17 @@ if [ "$CURRENT_PUID" != "$PUID" ]; then
     usermod -o -u "$PUID" foundry
 fi
 
-# Ensure directories exist and fix ownership
-mkdir -p "$APP_ROOT" "$DATA_ROOT" "$CONFIG_ROOT" "$LOG_ROOT" "$BACKUP_ROOT"
+# Ensure foundry directories exist (following official pattern)
+mkdir -p \
+  "$HOME/foundryvtt" \
+  "$HOME/foundrydata/Config" \
+  "$HOME/foundrydata/Data" \
+  "$HOME/foundrydata/Logs" \
+  "$HOME/foundrydata/Backups" \
+  "$HOME/foundrydata/FVTT"
 
-echo "Ensuring proper ownership of /foundry directories..."
-chown -R foundry:foundry /foundry
+echo "Ensuring proper ownership of $HOME..."
+chown -R foundry:foundry "$HOME"
 
 # Drop to non-root user and continue
 echo "Switching to foundry user (UID:$PUID, GID:$PGID)..."
