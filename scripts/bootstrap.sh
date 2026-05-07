@@ -27,6 +27,6 @@ FOUNDRY_EMAIL="$(read_secret "$FOUNDRY_EMAIL_FILE" "${FOUNDRY_EMAIL:-}")"
 FOUNDRY_PASSWORD="$(read_secret "$FOUNDRY_PASSWORD_FILE" "${FOUNDRY_PASSWORD:-}")"
 FOUNDRY_ADMIN_PASSWORD="$(read_secret "$FOUNDRY_ADMIN_PASSWORD_FILE" "${FOUNDRY_ADMIN_PASSWORD:-}")"
 
-mkdir -p "$APP_ROOT" "$DATA_ROOT" "$CONFIG_ROOT" "$LOG_ROOT"
+echo "Starting Foundry VTT version management..."
 
 exec /opt/foundry/scripts/manage-version.sh
