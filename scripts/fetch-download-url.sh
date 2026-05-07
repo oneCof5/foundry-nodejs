@@ -17,53 +17,78 @@ if [ -z "$FOUNDRY_EMAIL" ] || [ -z "$FOUNDRY_PASSWORD" ]; then
   exit 1
 fi
 
-echo "Authenticating with foundryvtt.com..." >&2
-
 cookie_jar="$(mktemp)"
 trap 'rm -f "$cookie_jar"' EXIT
 
-# Step 1: Get the login page to establish session
-echo "Getting session cookie..." >&2
-curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
-  https://foundryvtt.com/auth/login >/dev/null
+# Constants (matching felddy implementation)
+BASE_URL="https://foundryvtt.com"
+USER_AGENT="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
-# Step 2: Submit login form
+# Extract build number from version (x.yyy -> yyy)
+# FoundryVTT versions look like 14.161 where 161 is the build
+FOUNDRY_BUILD="${VERSION##*.}"
+
+echo "Authenticating with foundryvtt.com..." >&2
+
+# Step 1: Initial visit to get session cookies
+curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
+  -H "User-Agent: $USER_AGENT" \
+  -H "DNT: 1" \
+  -H "Upgrade-Insecure-Requests: 1" \
+  "$BASE_URL" >/dev/null
+
+# Step 2: Login
 echo "Logging in..." >&2
 login_response=$(curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
-  -L \
-  -d "email=${FOUNDRY_EMAIL}" \
+  -w "\nHTTP_CODE:%{http_code}" \
+  -H "User-Agent: $USER_AGENT" \
+  -H "DNT: 1" \
+  -H "Referer: $BASE_URL" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -X POST \
+  -d "userid=${FOUNDRY_EMAIL}" \
   -d "password=${FOUNDRY_PASSWORD}" \
-  https://foundryvtt.com/auth/login 2>&1)
+  "$BASE_URL/auth/login" 2>&1)
 
-# Step 3: Verify login by checking if we can access the API
-echo "Verifying authentication..." >&2
-auth_check=$(curl -fsSL -b "$cookie_jar" \
-  https://foundryvtt.com/api/me 2>&1 || echo "AUTH_FAILED")
+http_code=$(echo "$login_response" | grep "HTTP_CODE:" | cut -d: -f2)
 
-if [[ "$auth_check" == "AUTH_FAILED" ]] || [[ "$auth_check" == *"error"* ]]; then
-  echo "Error: Authentication failed" >&2
-  echo "Check your email and password" >&2
+if [[ "$http_code" != "200" && "$http_code" != "302" ]]; then
+  echo "Error: Login failed (HTTP ${http_code})" >&2
   exit 1
 fi
 
-# Step 4: Request download URL
-echo "Requesting download URL for version ${VERSION}..." >&2
-json=$(curl -fsSL -b "$cookie_jar" \
-  "https://foundryvtt.com/api/releases/download?version=${VERSION}&platform=linux" 2>&1)
+echo "Login successful" >&2
 
-if [ $? -ne 0 ]; then
-  echo "Error: Failed to fetch download URL" >&2
+# Step 3: Fetch presigned release URL (using felddy's endpoint)
+# Note: felddy uses build number and platform=node, response_type=json
+echo "Fetching presigned release URL for build ${FOUNDRY_BUILD}..." >&2
+RELEASE_URL="${BASE_URL}/releases/download?build=${FOUNDRY_BUILD}&platform=node&response_type=json"
+
+json_response=$(curl -fsSL -b "$cookie_jar" \
+  -w "\nHTTP_CODE:%{http_code}" \
+  -H "User-Agent: $USER_AGENT" \
+  -H "DNT: 1" \
+  -H "Referer: $BASE_URL" \
+  -H "Upgrade-Insecure-Requests: 1" \
+  "$RELEASE_URL" 2>&1)
+
+download_http_code=$(echo "$json_response" | grep "HTTP_CODE:" | cut -d: -f2)
+json=$(echo "$json_response" | grep -v "HTTP_CODE:")
+
+if [[ "$download_http_code" != "200" ]]; then
+  echo "Error: Failed to fetch release URL (HTTP ${download_http_code})" >&2
+  echo "Response: $json" >&2
   exit 1
 fi
 
-# Step 5: Parse the URL
-url=$(printf '%s' "$json" | jq -r '.url // .download // empty' 2>/dev/null)
+# Parse the presigned URL from JSON response
+url=$(printf '%s' "$json" | jq -r '.url // empty' 2>/dev/null)
 
 if [ -z "$url" ] || [ "$url" = "null" ]; then
-  echo "Error: Could not parse download URL" >&2
-  echo "API returned: $json" >&2
+  echo "Error: Could not parse presigned URL from response" >&2
+  echo "API Response: $json" >&2
   exit 1
 fi
 
-echo "Download URL obtained successfully" >&2
+echo "Presigned URL obtained successfully" >&2
 printf '%s\n' "$url"
