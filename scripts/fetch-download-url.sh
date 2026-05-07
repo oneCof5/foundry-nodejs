@@ -17,52 +17,51 @@ if [ -z "$FOUNDRY_EMAIL" ] || [ -z "$FOUNDRY_PASSWORD" ]; then
   exit 1
 fi
 
-echo "Logging in to foundryvtt.com..." >&2
+echo "Authenticating with foundryvtt.com..." >&2
 
 cookie_jar="$(mktemp)"
 trap 'rm -f "$cookie_jar"' EXIT
 
-# Get initial cookies
-if ! curl -fsSL -c "$cookie_jar" https://foundryvtt.com/ >/dev/null 2>&1; then
-  echo "Error: Failed to connect to foundryvtt.com" >&2
+# Step 1: Get the login page to establish session
+echo "Getting session cookie..." >&2
+curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
+  https://foundryvtt.com/auth/login >/dev/null
+
+# Step 2: Submit login form
+echo "Logging in..." >&2
+login_response=$(curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
+  -L \
+  -d "email=${FOUNDRY_EMAIL}" \
+  -d "password=${FOUNDRY_PASSWORD}" \
+  https://foundryvtt.com/auth/login 2>&1)
+
+# Step 3: Verify login by checking if we can access the API
+echo "Verifying authentication..." >&2
+auth_check=$(curl -fsSL -b "$cookie_jar" \
+  https://foundryvtt.com/api/me 2>&1 || echo "AUTH_FAILED")
+
+if [[ "$auth_check" == "AUTH_FAILED" ]] || [[ "$auth_check" == *"error"* ]]; then
+  echo "Error: Authentication failed" >&2
+  echo "Check your email and password" >&2
   exit 1
 fi
 
-# Try API login first
-echo "Attempting API login..." >&2
-api_login_result=$(curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
-  -X POST \
-  -H "Content-Type: application/json" \
-  -d "{\"username\":\"${FOUNDRY_EMAIL}\",\"password\":\"${FOUNDRY_PASSWORD}\"}" \
-  https://foundryvtt.com/api/auth/login 2>&1 || echo "FAILED")
-
-if [[ "$api_login_result" == "FAILED" ]]; then
-  echo "API login failed, trying form login..." >&2
-  if ! curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
-    -d "email=${FOUNDRY_EMAIL}" \
-    -d "password=${FOUNDRY_PASSWORD}" \
-    https://foundryvtt.com/auth/login >/dev/null 2>&1; then
-    echo "Error: Login failed - check your credentials" >&2
-    exit 1
-  fi
-fi
-
-# Get download URL
-echo "Fetching download link for version ${VERSION}..." >&2
+# Step 4: Request download URL
+echo "Requesting download URL for version ${VERSION}..." >&2
 json=$(curl -fsSL -b "$cookie_jar" \
   "https://foundryvtt.com/api/releases/download?version=${VERSION}&platform=linux" 2>&1)
 
 if [ $? -ne 0 ]; then
   echo "Error: Failed to fetch download URL" >&2
-  echo "Response: $json" >&2
   exit 1
 fi
 
+# Step 5: Parse the URL
 url=$(printf '%s' "$json" | jq -r '.url // .download // empty' 2>/dev/null)
 
 if [ -z "$url" ] || [ "$url" = "null" ]; then
-  echo "Error: Could not parse download URL for version ${VERSION}" >&2
-  echo "API Response: $json" >&2
+  echo "Error: Could not parse download URL" >&2
+  echo "API returned: $json" >&2
   exit 1
 fi
 

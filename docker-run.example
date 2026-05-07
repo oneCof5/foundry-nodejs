@@ -1,0 +1,18 @@
+docker create
+  --name='foundryvtt'
+  --net='foundrynet'
+  -e TZ="America/New_York"
+  -e 'FOUNDRY_VERSION'='14.161'
+  -e 'FOUNDRY_KEEP_PRIOR'='5'
+  -e 'FOUNDRY_PORT'='30000'
+  -e 'FOUNDRY_WORLD_ID'='empire-of-ghouls'
+  -e 'FOUNDRY_ZIP_URL'=''
+  -e 'PUID'='99'
+  -e 'PGID'='100'
+  -p '30000:30000/tcp'
+  -v '/mnt/user/data/foundryvtt':'/data':'rw'
+  -v '/mnt/user/appdata/foundryvtt/secrets/admin_password':'/run/secrets/foundry_admin_password':'ro'
+  -v '/mnt/user/appdata/foundryvtt/secrets/license_key':'/run/secrets/foundry_license_key':'ro'
+  -v '/mnt/user/appdata/foundryvtt/secrets/email':'/run/secrets/foundry_email':'rw'
+  -v '/mnt/user/appdata/foundryvtt/secrets/password':'/run/secrets/foundry_password':'rw'
+  -v '/mnt/user/appdata/foundryvtt/app':'/foundryvtt':'rw' 'ghcr.io/onecof5/foundry-nodejs:latest' 
