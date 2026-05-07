@@ -15,9 +15,14 @@ mapfile -t versions < <(
     | sort -Vr
 )
 
+if [ "${#versions[@]}" -eq 0 ]; then
+  echo "No zip files found in cache."
+  exit 0
+fi
+
 if [ "${#versions[@]}" -le "$FOUNDRY_KEEP_PRIOR" ]; then
   echo "No old zip files to prune."
-  return 0
+  exit 0
 fi
 
 keep=()
@@ -39,3 +44,5 @@ for zip in "$FVTT_CACHE_DIR"/foundryvtt-*.zip; do
     rm -f "$zip"
   fi
 done
+
+echo "Pruning complete."
