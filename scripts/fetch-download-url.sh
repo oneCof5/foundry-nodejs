@@ -52,6 +52,20 @@ login_response=$(curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
 
 http_code=$(echo "$login_response" | grep "HTTP_CODE:" | cut -d: -f2)
 
+# If that fails, try with email
+if [[ "$http_code" != "200" && "$http_code" != "302" ]]; then
+  echo "Trying alternate login method..." >&2
+  login_response=$(curl -fsSL -c "$cookie_jar" -b "$cookie_jar" \
+    -w "\nHTTP_CODE:%{http_code}" \
+    -H "User-Agent: $USER_AGENT" \
+    -X POST \
+    -d "email=${FOUNDRY_EMAIL}" \
+    -d "password=${FOUNDRY_PASSWORD}" \
+    "$BASE_URL/auth/login" 2>&1)
+  
+  http_code=$(echo "$login_response" | grep "HTTP_CODE:" | cut -d: -f2)
+fi
+
 if [[ "$http_code" != "200" && "$http_code" != "302" ]]; then
   echo "Error: Login failed (HTTP ${http_code})" >&2
   exit 1
