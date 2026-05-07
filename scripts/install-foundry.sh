@@ -3,13 +3,12 @@ set -euo pipefail
 
 VERSION="${1:?version required}"
 
-: "${HOME:=/home/foundry}"
 : "${FOUNDRY_EMAIL:=}"
 : "${FOUNDRY_PASSWORD:=}"
 : "${FOUNDRY_ZIP_URL:=}"
 
-FVTT_APP_DIR="$HOME/foundryvtt"
-FVTT_CACHE_DIR="$HOME/foundrydata/FVTT"
+FVTT_APP_DIR="/foundryvtt"
+FVTT_CACHE_DIR="/data/FVTT"
 ZIP_FILE="${FVTT_CACHE_DIR}/foundryvtt-${VERSION}.zip"
 
 mkdir -p "$FVTT_CACHE_DIR"

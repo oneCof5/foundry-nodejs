@@ -1,7 +1,6 @@
 FROM node:24-bookworm-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    HOME=/home/foundry \
     FOUNDRY_VERSION=14.161 \
     FOUNDRY_KEEP_PRIOR=5 \
     PUID=911 \
@@ -23,8 +22,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Create foundry user, group, and directories in single layer
 RUN groupadd -g 911 foundry \
     && useradd -u 911 -g foundry -m -d /home/foundry -s /bin/bash foundry \
-    && mkdir -p /home/foundry/foundryvtt /home/foundry/foundrydata \
-    && chown -R foundry:foundry /home/foundry
+    && mkdir -p /foundryvtt /data \
+    && chown -R foundry:foundry /foundryvtt /data
 
 WORKDIR /opt/foundry
 

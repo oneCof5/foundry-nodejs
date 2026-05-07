@@ -1,10 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${HOME:=/home/foundry}"
 : "${FOUNDRY_KEEP_PRIOR:=5}"
 
-FVTT_CACHE_DIR="$HOME/foundrydata/FVTT"
+FVTT_CACHE_DIR="/data/FVTT"
 
 echo "Pruning old Foundry zip files (keeping ${FOUNDRY_KEEP_PRIOR} most recent)..."
 

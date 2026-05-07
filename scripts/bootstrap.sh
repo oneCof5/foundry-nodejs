@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-: "${HOME:=/home/foundry}"
+# Verify running as user foundry:foundry
+echo "Running as user: $(whoami) (UID:$(id -u), GID:$(id -g))"
+
 : "${FOUNDRY_VERSION:=14.161}"
 : "${FOUNDRY_KEEP_PRIOR:=5}"
 : "${FOUNDRY_PORT:=30000}"
@@ -29,20 +31,17 @@ export FOUNDRY_EMAIL="$(read_secret "$FOUNDRY_EMAIL_FILE" "${FOUNDRY_EMAIL:-}")"
 export FOUNDRY_PASSWORD="$(read_secret "$FOUNDRY_PASSWORD_FILE" "${FOUNDRY_PASSWORD:-}")"
 export FOUNDRY_ADMIN_PASSWORD="$(read_secret "$FOUNDRY_ADMIN_PASSWORD_FILE" "${FOUNDRY_ADMIN_PASSWORD:-}")"
 
-# Change to home directory (following official instructions)
-cd "$HOME"
-
 echo "Checking Foundry VTT installation..."
 
 # Check if the requested version is already installed
-INSTALLED_VERSION_FILE="$HOME/foundryvtt/.version"
+INSTALLED_VERSION_FILE="/foundryvtt/.version"
 if [ -f "$INSTALLED_VERSION_FILE" ]; then
   INSTALLED_VERSION="$(cat "$INSTALLED_VERSION_FILE")"
 else
   INSTALLED_VERSION=""
 fi
 
-if [ "$INSTALLED_VERSION" = "$FOUNDRY_VERSION" ] && [ -f "$HOME/foundryvtt/main.js" ]; then
+if [ "$INSTALLED_VERSION" = "$FOUNDRY_VERSION" ] && [ -f "/foundryvtt/main.js" ]; then
   echo "Foundry VTT ${FOUNDRY_VERSION} is already installed."
 else
   echo "Installing Foundry VTT ${FOUNDRY_VERSION}..."
