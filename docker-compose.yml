@@ -1,0 +1,62 @@
+services:
+  foundryvtt:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NODE_IMAGE_VERSION: 24-bookworm-slim
+        FOUNDRY_VERSION: 14.161
+        CONTAINER_VERSION: local
+    image: foundryvtt-nodejs:local
+    container_name: foundryvtt-local
+    restart: unless-stopped
+    ports:
+      - "30000:30000"
+    environment:
+      TZ: America/New_York
+      PUID: 1000
+      PGID: 1000
+      FOUNDRY_VERSION: 14.161
+      FOUNDRY_KEEP_PRIOR: 5
+      FOUNDRY_PORT: 30000
+      VERBOSE_LOGGING: "false"
+
+      # Install source: either set this to a timed URL, or pre-seed /data/FVTT
+      FOUNDRY_RELEASE_URL: ""
+
+      # You can set these directly, but secrets/bind-mounted secret files are better
+      FOUNDRY_ADMIN_PASSWORD: ""
+      FOUNDRY_LICENSE_KEY: ""
+
+      # options.json mapping
+      FOUNDRY_HOSTNAME: ""
+      FOUNDRY_ROUTE_PREFIX: ""
+      FOUNDRY_PROXY_SSL: "false"
+      FOUNDRY_PROXY_PORT: 443
+      FOUNDRY_MINIFY_STATIC_FILES: "true"
+      FOUNDRY_UPNP: "false"
+      FOUNDRY_COMPRESS_SOCKET: "false"
+      FOUNDRY_COMPRESS_WEBSOCKET: "false"
+      FOUNDRY_LANGUAGE: "en.core"
+      FOUNDRY_WORLD: ""
+
+    volumes:
+      - foundry_data:/data
+      - foundry_logs:/logs
+      - foundry_app:/foundryvtt
+
+      # Optional non-Swarm secret bind mounts
+      # - ./secrets/admin_password:/run/secrets/foundry_admin_password:ro
+      # - ./secrets/license_key:/run/secrets/foundry_license_key:ro
+
+    healthcheck:
+      test: ["CMD", "/opt/foundry/scripts/healthcheck.sh"]
+      interval: 30s
+      timeout: 5s
+      start_period: 3m
+      retries: 3
+
+volumes:
+  foundry_data:
+  foundry_logs:
+  foundry_app:

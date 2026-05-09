@@ -1,90 +1,93 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+COLOR_RESET='\033[0m'
+COLOR_DEBUG='\033[0;36m'
+COLOR_DEFAULT='\033[0;37m'
+SCRIPT_NAME="${0##*/}"
+SCRIPT_NAME="${SCRIPT_NAME%.sh}"
 VERSION="${1:?version required}"
 
-: "${FOUNDRY_EMAIL:=}"
-: "${FOUNDRY_PASSWORD:=}"
-: "${FOUNDRY_ZIP_URL:=}"
+: "${FOUNDRY_RELEASE_URL:=}"
+: "${VERBOSE_LOGGING:=false}"
+
+log_info() {
+  echo -e "${COLOR_DEFAULT}${SCRIPT_NAME}: $*${COLOR_RESET}" >&2
+}
+
+log_debug() {
+  if [ "$VERBOSE_LOGGING" = "true" ]; then
+    echo -e "${COLOR_DEBUG}${SCRIPT_NAME}: $*${COLOR_RESET}" >&2
+  fi
+}
 
 FVTT_APP_DIR="/foundryvtt"
 FVTT_CACHE_DIR="/data/FVTT"
-ZIP_FILE="${FVTT_CACHE_DIR}/foundryvtt-${VERSION}.zip"
+PRIMARY_ZIP="${FVTT_CACHE_DIR}/FoundryVTT-Node-${VERSION}.zip"
 
 mkdir -p "$FVTT_CACHE_DIR"
 
-# Check if zip already exists in cache
-if [ ! -f "$ZIP_FILE" ]; then
-  echo "Foundry VTT ${VERSION} zip not found in cache."
-  
-  if [ -n "$FOUNDRY_ZIP_URL" ]; then
-    echo "Downloading from provided URL..."
-    if ! wget -q --show-progress -O "$ZIP_FILE" "$FOUNDRY_ZIP_URL"; then
-      echo "Error: Failed to download from provided URL" >&2
-      exit 1
+find_cached_zip() {
+  local version="$1"
+  local cache_dir="$2"
+  local candidates=(
+    "${cache_dir}/FoundryVTT-Node-${version}.zip"
+    "${cache_dir}/Foundry-Node-${version}.zip"
+  )
+  local candidate
+  for candidate in "${candidates[@]}"; do
+    if [ -f "$candidate" ]; then
+      printf '%s\n' "$candidate"
+      return 0
     fi
-  elif [ -n "$FOUNDRY_EMAIL" ] && [ -n "$FOUNDRY_PASSWORD" ]; then
-    echo "Downloading from foundryvtt.com..."
-    echo "Fetching download URL..."
-    
-    if ! url="$(/opt/foundry/scripts/fetch-download-url.sh "$VERSION" 2>&1)"; then
-      echo "Error: Failed to get download URL" >&2
-      echo "Output: $url" >&2
-      exit 1
-    fi
-    
-    echo "Download URL obtained, starting download..."
-    if ! wget -q --show-progress -O "$ZIP_FILE" "$url"; then
-      echo "Error: Failed to download Foundry VTT ${VERSION}" >&2
-      rm -f "$ZIP_FILE"
-      exit 1
-    fi
-  else
-    echo "Error: Cannot download Foundry VTT ${VERSION}" >&2
-    echo "Please provide one of:" >&2
-    echo "  - FOUNDRY_ZIP_URL (timed download link)" >&2
-    echo "  - FOUNDRY_EMAIL and FOUNDRY_PASSWORD (account credentials)" >&2
-    echo "  - Pre-download zip to: ${ZIP_FILE}" >&2
+  done
+  return 1
+}
+
+FOUNDRY_ZIP=""
+if FOUNDRY_ZIP="$(find_cached_zip "$VERSION" "$FVTT_CACHE_DIR")"; then
+  log_info "Using cached Foundry archive: $(basename "$FOUNDRY_ZIP")"
+else
+  log_info "No cached archive found for Foundry Node ${VERSION}"
+  if [ -z "$FOUNDRY_RELEASE_URL" ]; then
+    log_info "Error: provide FOUNDRY_RELEASE_URL or pre-seed /data/FVTT with one of:" >&2
+    log_info "  - FoundryVTT-Node-${VERSION}.zip" >&2
+    log_info "  - Foundry-Node-${VERSION}.zip" >&2
     exit 1
   fi
-else
-  echo "Using cached Foundry VTT ${VERSION} zip."
+  FOUNDRY_ZIP="$PRIMARY_ZIP"
+  log_info "Downloading Foundry from timed URL"
+  wget -q --show-progress -O "$FOUNDRY_ZIP" "$FOUNDRY_RELEASE_URL"
 fi
 
-# Verify zip file was downloaded
-if [ ! -f "$ZIP_FILE" ]; then
-  echo "Error: Zip file does not exist at ${ZIP_FILE}" >&2
-  exit 1
-fi
+ZIP_BASENAME="$(basename "$FOUNDRY_ZIP")"
+case "$ZIP_BASENAME" in
+  FoundryVTT-Node-"${VERSION}".zip|Foundry-Node-"${VERSION}".zip)
+    ;;
+  *)
+    log_info "Error: invalid archive name '$ZIP_BASENAME'" >&2
+    log_info "Expected FoundryVTT-Node-${VERSION}.zip or Foundry-Node-${VERSION}.zip" >&2
+    exit 1
+    ;;
+esac
 
-# Check zip file size
-ZIP_SIZE=$(stat -c%s "$ZIP_FILE" 2>/dev/null || stat -f%z "$ZIP_FILE" 2>/dev/null || echo "0")
+ZIP_SIZE=$(stat -c%s "$FOUNDRY_ZIP" 2>/dev/null || stat -f%z "$FOUNDRY_ZIP" 2>/dev/null || echo 0)
 if [ "$ZIP_SIZE" -lt 1000000 ]; then
-  echo "Error: Downloaded file is too small (${ZIP_SIZE} bytes), likely invalid" >&2
-  cat "$ZIP_FILE" >&2
-  rm -f "$ZIP_FILE"
+  log_info "Error: archive is too small (${ZIP_SIZE} bytes)" >&2
   exit 1
 fi
 
-# Install the software
-echo "Installing Foundry VTT ${VERSION} to ${FVTT_APP_DIR}..."
-cd "$FVTT_APP_DIR"
-rm -rf ./* 2>/dev/null || true
+log_info "Installing Foundry VTT ${VERSION} into ${FVTT_APP_DIR}"
+mkdir -p "$FVTT_APP_DIR"
+find "$FVTT_APP_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 
-if ! unzip -q "$ZIP_FILE"; then
-  echo "Error: Failed to unzip ${ZIP_FILE}" >&2
+unzip -q "$FOUNDRY_ZIP" -d "$FVTT_APP_DIR"
+
+if [ ! -f "$FVTT_APP_DIR/main.js" ] && [ ! -f "$FVTT_APP_DIR/resources/app/main.mjs" ]; then
+  log_info "Error: installation failed; no Foundry entrypoint found" >&2
   exit 1
 fi
 
-# Verify installation
-if [ ! -f "$FVTT_APP_DIR/main.js" ]; then
-  echo "Error: Installation failed - main.js not found" >&2
-  echo "Contents of ${FVTT_APP_DIR}:" >&2
-  ls -la "$FVTT_APP_DIR" >&2
-  exit 1
-fi
-
-echo "Foundry VTT ${VERSION} installed successfully."
-
-# Prune old zips from cache
+echo "$VERSION" > "${FVTT_APP_DIR}/.version"
+log_info "Foundry VTT ${VERSION} installed successfully"
 /opt/foundry/scripts/prune-cache.sh

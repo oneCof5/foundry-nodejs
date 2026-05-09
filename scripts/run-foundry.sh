@@ -1,86 +1,118 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+COLOR_RESET='\033[0m'
+COLOR_DEBUG='\033[0;36m'
+COLOR_DEFAULT='\033[0;37m'
+SCRIPT_NAME="${0##*/}"
+SCRIPT_NAME="${SCRIPT_NAME%.sh}"
 VERSION="${1:?version required}"
 
 : "${FOUNDRY_PORT:=30000}"
-: "${FOUNDRY_WORLD_ID:=}"
+: "${FOUNDRY_WORLD:=}"
+: "${FOUNDRY_HOSTNAME:=}"
+: "${FOUNDRY_ROUTE_PREFIX:=}"
+: "${FOUNDRY_PROXY_SSL:=false}"
+: "${FOUNDRY_PROXY_PORT:=443}"
+: "${FOUNDRY_MINIFY_STATIC_FILES:=true}"
+: "${FOUNDRY_UPNP:=false}"
+: "${FOUNDRY_COMPRESS_SOCKET:=false}"
+: "${FOUNDRY_COMPRESS_WEBSOCKET:=false}"
+: "${FOUNDRY_LANGUAGE:=en.core}"
 : "${FOUNDRY_ADMIN_PASSWORD:=}"
 : "${FOUNDRY_LICENSE_KEY:=}"
+: "${VERBOSE_LOGGING:=false}"
+
+log_info() {
+  echo -e "${COLOR_DEFAULT}${SCRIPT_NAME}: $*${COLOR_RESET}" >&2
+}
+
+log_debug() {
+  if [ "$VERBOSE_LOGGING" = "true" ]; then
+    echo -e "${COLOR_DEBUG}${SCRIPT_NAME}: $*${COLOR_RESET}" >&2
+  fi
+}
 
 FVTT_APP_DIR="/foundryvtt"
 FVTT_DATA_DIR="/data"
-CONFIG_DIR="$FVTT_DATA_DIR/Config"
-LOGS_DIR="$FVTT_DATA_DIR/Logs"
+CONFIG_DIR="${FVTT_DATA_DIR}/Config"
+DATA_LOGS_DIR="${FVTT_DATA_DIR}/Logs"
+OPTIONS_FILE="${CONFIG_DIR}/options.json"
 
-if [ ! -f "$FVTT_APP_DIR/main.js" ]; then
-  echo "Error: Foundry VTT installation not found at ${FVTT_APP_DIR}" >&2
+mkdir -p "$CONFIG_DIR" "$DATA_LOGS_DIR"
+
+if [ ! -f "$FVTT_APP_DIR/main.js" ] && [ ! -f "$FVTT_APP_DIR/resources/app/main.mjs" ]; then
+  log_info "Error: Foundry VTT installation not found at ${FVTT_APP_DIR}" >&2
   exit 1
 fi
 
-mkdir -p "$CONFIG_DIR" "$LOGS_DIR"
-
-# Set admin password if provided
-if [ -n "$FOUNDRY_ADMIN_PASSWORD" ]; then
-  if [ ! -f "$CONFIG_DIR/admin.txt" ]; then
-    echo "Setting administrator password..."
-    printf '%s' "$FOUNDRY_ADMIN_PASSWORD" > "$CONFIG_DIR/admin.txt"
-  fi
-else
-  echo "WARNING: No admin password provided" >&2
-  echo "Set FOUNDRY_ADMIN_PASSWORD environment variable or mount /run/secrets/foundry_admin_password" >&2
+if [ -n "$FOUNDRY_ADMIN_PASSWORD" ] && [ ! -f "$CONFIG_DIR/admin.txt" ]; then
+  log_info "Setting administrator password"
+  printf '%s' "$FOUNDRY_ADMIN_PASSWORD" > "$CONFIG_DIR/admin.txt"
 fi
 
-# Validate admin password exists
 if [ ! -f "$CONFIG_DIR/admin.txt" ] || [ ! -s "$CONFIG_DIR/admin.txt" ]; then
-  echo "ERROR: Admin password is required but not configured" >&2
-  echo "Please provide FOUNDRY_ADMIN_PASSWORD environment variable or secret" >&2
+  log_info "Error: admin password is required but not configured" >&2
   exit 1
 fi
 
-# Set license key if provided
 if [ -n "$FOUNDRY_LICENSE_KEY" ]; then
-  echo "Configuring license key..."
-  cat > "$CONFIG_DIR/license.json" <<EOF
+  cat > "$CONFIG_DIR/license.json" <<JSON
 {
   "license": "${FOUNDRY_LICENSE_KEY}"
 }
-EOF
+JSON
 fi
 
-# Check for EULA acceptance
-OPTIONS_FILE="$CONFIG_DIR/options.json"
 if [ ! -f "$OPTIONS_FILE" ]; then
-  echo "───────────────────────────────────────"
-  echo "NOTICE: First-time setup required"
-  echo "───────────────────────────────────────"
-  echo "1. Access Foundry at http://your-server:${FOUNDRY_PORT}"
-  echo "2. Accept the EULA"
-  echo "3. Enter your license key (if not auto-configured)"
-  echo "4. Complete initial setup"
-  echo "───────────────────────────────────────"
+  log_info "Creating options.json from environment"
+  jq -n \
+    --arg hostname "$FOUNDRY_HOSTNAME" \
+    --arg routePrefix "$FOUNDRY_ROUTE_PREFIX" \
+    --arg language "$FOUNDRY_LANGUAGE" \
+    --arg world "$FOUNDRY_WORLD" \
+    --argjson port "$FOUNDRY_PORT" \
+    --argjson proxySSL "$([ "$FOUNDRY_PROXY_SSL" = "true" ] && echo true || echo false)" \
+    --argjson proxyPort "$FOUNDRY_PROXY_PORT" \
+    --argjson minifyStaticFiles "$([ "$FOUNDRY_MINIFY_STATIC_FILES" = "true" ] && echo true || echo false)" \
+    --argjson upnp "$([ "$FOUNDRY_UPNP" = "true" ] && echo true || echo false)" \
+    --argjson compressSocket "$([ "$FOUNDRY_COMPRESS_SOCKET" = "true" ] && echo true || echo false)" \
+    --argjson compressWebsocket "$([ "$FOUNDRY_COMPRESS_WEBSOCKET" = "true" ] && echo true || echo false)" \
+    '
+    {
+      port: $port,
+      upnp: $upnp,
+      proxySSL: $proxySSL,
+      proxyPort: $proxyPort,
+      minifyStaticFiles: $minifyStaticFiles,
+      compressSocket: $compressSocket,
+      compressWebsocket: $compressWebsocket,
+      language: $language
+    }
+    + (if $hostname != "" then {hostname: $hostname} else {} end)
+    + (if $routePrefix != "" then {routePrefix: $routePrefix} else {} end)
+    + (if $world != "" then {world: $world} else {} end)
+    ' > "$OPTIONS_FILE"
 fi
 
-echo "───────────────────────────────────────"
-echo "Starting Foundry VTT ${VERSION}..."
-echo "Port: ${FOUNDRY_PORT}"
-echo "Data Path: ${FVTT_DATA_DIR}"
-echo "Admin Password: Configured ✓"
-if [ -n "$FOUNDRY_LICENSE_KEY" ]; then
-  echo "License Key: Configured ✓"
-fi
-if [ -n "$FOUNDRY_WORLD_ID" ]; then
-  echo "World: ${FOUNDRY_WORLD_ID}"
-fi
-echo "───────────────────────────────────────"
-echo "Access Foundry at http://your-server:${FOUNDRY_PORT}"
-echo "───────────────────────────────────────"
+log_info "Starting Foundry VTT ${VERSION}"
+log_info "Port: ${FOUNDRY_PORT}"
+log_info "Data Path: ${FVTT_DATA_DIR}"
+log_info "Logs Path: /logs"
 
-# Change to foundryvtt directory and start
 cd "$FVTT_APP_DIR"
 
-# Start running the server (FoundryVTT V13 and newer)
-exec node main.js \
-  --dataPath="$FVTT_DATA_DIR" \
-  --port="$FOUNDRY_PORT" \
-  ${FOUNDRY_WORLD_ID:+--world="$FOUNDRY_WORLD_ID"}
+args=(
+  --dataPath="$FVTT_DATA_DIR"
+  --port="$FOUNDRY_PORT"
+)
+
+if [ -n "$FOUNDRY_WORLD" ]; then
+  args+=(--world="$FOUNDRY_WORLD")
+fi
+
+if [ -f "$FVTT_APP_DIR/main.js" ]; then
+  exec node main.js "${args[@]}"
+else
+  exec node resources/app/main.mjs "${args[@]}"
+fi

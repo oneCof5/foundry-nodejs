@@ -1,47 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+COLOR_RESET='\033[0m'
+COLOR_DEFAULT='\033[0;37m'
+SCRIPT_NAME="${0##*/}"
+SCRIPT_NAME="${SCRIPT_NAME%.sh}"
+
 : "${FOUNDRY_KEEP_PRIOR:=5}"
 
+log_info() {
+  echo -e "${COLOR_DEFAULT}${SCRIPT_NAME}: $*${COLOR_RESET}" >&2
+}
+
 FVTT_CACHE_DIR="/data/FVTT"
+mkdir -p "$FVTT_CACHE_DIR"
 
-echo "Pruning old Foundry zip files (keeping ${FOUNDRY_KEEP_PRIOR} most recent)..."
-
-mapfile -t versions < <(
-  find "$FVTT_CACHE_DIR" -maxdepth 1 -type f -name 'foundryvtt-*.zip' \
-    | sed 's|.*/foundryvtt-||' \
-    | sed 's|\.zip$||' \
-    | sort -Vr
+mapfile -t archives < <(
+  find "$FVTT_CACHE_DIR" -maxdepth 1 -type f \( \
+    -name 'FoundryVTT-Node-*.zip' -o \
+    -name 'Foundry-Node-*.zip' \
+  \) | sort -Vr
 )
 
-if [ "${#versions[@]}" -eq 0 ]; then
-  echo "No zip files found in cache."
+if [ "${#archives[@]}" -le "$FOUNDRY_KEEP_PRIOR" ]; then
+  log_info "No old zip files to prune"
   exit 0
 fi
 
-if [ "${#versions[@]}" -le "$FOUNDRY_KEEP_PRIOR" ]; then
-  echo "No old zip files to prune."
-  exit 0
-fi
-
-keep=()
-for v in "${versions[@]}"; do
-  keep+=("$v")
-  [ "${#keep[@]}" -ge "$FOUNDRY_KEEP_PRIOR" ] && break
+for archive in "${archives[@]:$FOUNDRY_KEEP_PRIOR}"; do
+  log_info "Removing old zip: $(basename "$archive")"
+  rm -f "$archive"
 done
 
-for zip in "$FVTT_CACHE_DIR"/foundryvtt-*.zip; do
-  [ -f "$zip" ] || continue
-  v="${zip##*/foundryvtt-}"
-  v="${v%.zip}"
-  skip=0
-  for k in "${keep[@]}"; do
-    [ "$v" = "$k" ] && skip=1
-  done
-  if [ "$skip" -eq 0 ]; then
-    echo "Removing old zip: foundryvtt-${v}.zip"
-    rm -f "$zip"
-  fi
-done
-
-echo "Pruning complete."
+log_info "Pruning complete"

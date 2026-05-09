@@ -6,7 +6,7 @@ docker create
   -e 'FOUNDRY_KEEP_PRIOR'='5'
   -e 'FOUNDRY_PORT'='30000'
   -e 'FOUNDRY_WORLD_ID'='empire-of-ghouls'
-  -e 'FOUNDRY_ZIP_URL'=''
+  -e 'FOUNDRY_NODE_RELEASE_URL'=''
   -e 'PUID'='99'
   -e 'PGID'='100'
   -p '30000:30000/tcp'
