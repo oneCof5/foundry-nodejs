@@ -1,16 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-COLOR_RESET='\033[0m'
-COLOR_DEFAULT='\033[0;37m'
-SCRIPT_NAME="${0##*/}"
-SCRIPT_NAME="${SCRIPT_NAME%.sh}"
+SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=/dev/null
+source "${SCRIPT_DIR}/logging.sh"
 
-: "${FOUNDRY_KEEP_PRIOR:=5}"
-
-log_info() {
-  echo -e "${COLOR_DEFAULT}${SCRIPT_NAME}: $*${COLOR_RESET}" >&2
-}
+: "${FVTT_KEEP_PRIOR_COPIES}"
+: "${FVTT_VERBOSE_LOGGING}"
+: "${FVTT_LOG_BASE}"
 
 FVTT_CACHE_DIR="/data/FVTT"
 mkdir -p "$FVTT_CACHE_DIR"
@@ -22,12 +19,12 @@ mapfile -t archives < <(
   \) | sort -Vr
 )
 
-if [ "${#archives[@]}" -le "$FOUNDRY_KEEP_PRIOR" ]; then
+if [ "${#archives[@]}" -le "$FVTT_KEEP_PRIOR_COPIES" ]; then
   log_info "No old zip files to prune"
   exit 0
 fi
 
-for archive in "${archives[@]:$FOUNDRY_KEEP_PRIOR}"; do
+for archive in "${archives[@]:$FVTT_KEEP_PRIOR_COPIES}"; do
   log_info "Removing old zip: $(basename "$archive")"
   rm -f "$archive"
 done

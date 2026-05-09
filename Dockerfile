@@ -1,38 +1,76 @@
 # syntax=docker/dockerfile:1
+# check=skip=SecretsUsedInArgOrEnv
 
 ARG NODE_IMAGE_VERSION=24-bookworm-slim
-ARG FOUNDRY_VERSION=14.161
-ARG CONTAINER_VERSION=local
+ARG FVTT_VERSION=14.161
+ARG CONT_VERSION=local
 
 FROM node:${NODE_IMAGE_VERSION}
 
-ARG FOUNDRY_VERSION
-ARG CONTAINER_VERSION
+ARG FVTT_VERSION
+ARG CONT_VERSION
 
 ENV DEBIAN_FRONTEND=noninteractive \
-    FOUNDRY_VERSION=${FOUNDRY_VERSION} \
-    FOUNDRY_KEEP_PRIOR=5 \
-    FOUNDRY_PORT=30000 \
-    FOUNDRY_HOSTNAME= \
-    FOUNDRY_ROUTE_PREFIX= \
-    FOUNDRY_PROXY_SSL=false \
-    FOUNDRY_PROXY_PORT=443 \
-    FOUNDRY_MINIFY_STATIC_FILES=true \
-    FOUNDRY_UPNP=false \
-    FOUNDRY_COMPRESS_SOCKET=false \
-    FOUNDRY_COMPRESS_WEBSOCKET=false \
-    FOUNDRY_LANGUAGE=en.core \
-    FOUNDRY_WORLD= \
-    FOUNDRY_ADMIN_PASSWORD= \
-    FOUNDRY_LICENSE_KEY= \
-    FOUNDRY_RELEASE_URL= \
+    \
+    # Foundry version & retention
+    FVTT_VERSION=${FVTT_VERSION} \
+    FVTT_KEEP_PRIOR_COPIES=5 \
+    \
+    # Options.json / server configuration inputs
+    FVTT_AWS_CONFIG=null \
+    FVTT_COMPRESS_SOCKET=true \
+    FVTT_COMPRESS_STATIC=true \
+    FVTT_CSS_THEME=dark \
+    FVTT_DELETE_NEDB=false \
+    FVTT_FULLSCREEN=false \
+    FVTT_HOSTNAME=foundry-v14.onecof5.com \
+    FVTT_HOT_RELOAD=false \
+    FVTT_LANGUAGE=en.core \
+    FVTT_LOCAL_HOSTNAME= \
+    FVTT_MINIFY_STATIC_FILES:=false \
+    FVTT_NOUPDATE=false \
+    FVTT_PASSWORD_SALT= \
+    FVTT_PORT=30000 \
+    FVTT_PROTOCOL=4 \
+    FVTT_PROXY_PORT= \
+    FVTT_PROXY_SSL=false \
+    FVTT_ROUTE_PREFIX= \
+    FVTT_SERVICE_CONFIG= \
+    FVTT_SSL_CERT_PATH= \
+    FVTT_SSL_KEY_PATH= \
+    FVTT_TELEMETRY_ENABLED=false \
+    FVTT_TEMP_DIR= \
+    FVTT_UNIX_SOCKET= \
+    FVTT_UPDATE_CHANNEL=stable \
+    FVTT_UPNP_ENABLED=false \
+    FVTT_UPNP_LEASE_DURATION= \
+    FVTT_WORLD= \
+    FVTT_ADMIN_PASSWORD= \
+    FVTT_NO_BACKUPS=false \
+    \
+    # Install / licensing 
+    FVTT_LICENSE_KEY= \
+    FVTT_RELEASE_URL= \
+    \
+    # Logging \
+    FVTT_VERBOSE_LOGGING=false \
+    FVTT_LOG_MAX_SIZE_BYTES=104857600 \
+    FVTT_LOG_KEEP_ROTATED=10 \
+    FVTT_LOG_TO_STDERR=true  \
+    FVTT_LOG_USE_COLOR=true  \
+    \
+    # Base Container Paths \
+    FVTT_APP_DIR=/foundryvtt \
+    FVTT_DATA_DIR=/data \
+    FVTT_LOGS_DIR=/logs \
+    \
+    # Container runtime identity \
     PUID=911 \
-    PGID=911 \
-    HOME=/home/foundry
-
-LABEL com.foundryvtt.version="${FOUNDRY_VERSION}" \
+    PGID=911
+    
+LABEL com.foundryvtt.version="${FVTT_VERSION}" \
       org.opencontainers.image.title="foundry-nodejs" \
-      org.opencontainers.image.version="${CONTAINER_VERSION}" \
+      org.opencontainers.image.version="${CONT_VERSION}" \
       org.opencontainers.image.vendor="oneCof5" \
       org.opencontainers.image.description="Foundry VTT Node container with runtime installer using cached or timed release URLs"
 

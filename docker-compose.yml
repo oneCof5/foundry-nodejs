@@ -5,8 +5,8 @@ services:
       dockerfile: Dockerfile
       args:
         NODE_IMAGE_VERSION: 24-bookworm-slim
-        FOUNDRY_VERSION: 14.161
-        CONTAINER_VERSION: local
+        FVTT_VERSION: 14.161
+        CONT_VERSION: local
     image: foundryvtt-nodejs:local
     container_name: foundryvtt-local
     restart: unless-stopped
@@ -16,29 +16,29 @@ services:
       TZ: America/New_York
       PUID: 1000
       PGID: 1000
-      FOUNDRY_VERSION: 14.161
-      FOUNDRY_KEEP_PRIOR: 5
-      FOUNDRY_PORT: 30000
-      VERBOSE_LOGGING: "false"
+      FVTT_VERSION: 14.161
+      FVTT_KEEP_PRIOR_COPIES: 5
+      FVTT_PORT: 30000
+      FVTT_VERBOSE_LOGGING: "false"
 
       # Install source: either set this to a timed URL, or pre-seed /data/FVTT
-      FOUNDRY_RELEASE_URL: ""
+      FVTT_RELEASE_URL: ""
 
       # You can set these directly, but secrets/bind-mounted secret files are better
-      FOUNDRY_ADMIN_PASSWORD: ""
-      FOUNDRY_LICENSE_KEY: ""
+      FVTT_ADMIN_PASSWORD: ""
+      FVTT_LICENSE_KEY: ""
 
       # options.json mapping
-      FOUNDRY_HOSTNAME: ""
-      FOUNDRY_ROUTE_PREFIX: ""
-      FOUNDRY_PROXY_SSL: "false"
-      FOUNDRY_PROXY_PORT: 443
-      FOUNDRY_MINIFY_STATIC_FILES: "true"
-      FOUNDRY_UPNP: "false"
-      FOUNDRY_COMPRESS_SOCKET: "false"
-      FOUNDRY_COMPRESS_WEBSOCKET: "false"
-      FOUNDRY_LANGUAGE: "en.core"
-      FOUNDRY_WORLD: ""
+      FVTT_HOSTNAME: ""
+      FVTT_ROUTE_PREFIX: ""
+      FVTT_PROXY_SSL: "false"
+      FVTT_PROXY_PORT: 443
+      FVTT_MINIFY_STATIC_FILES: "true"
+      FVTT_UPNP_ENABLED: "false"
+      FVTT_COMPRESS_SOCKET: "false"
+      FVTT_COMPRESS_STATIC: "false"
+      FVTT_LANGUAGE: "en.core"
+      FVTT_WORLD: ""
 
     volumes:
       - foundry_data:/data
