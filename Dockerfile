@@ -17,17 +17,17 @@ ENV DEBIAN_FRONTEND=noninteractive \
     FVTT_KEEP_PRIOR_COPIES=5 \
     \
     # Options.json / server configuration inputs
-    FVTT_AWS_CONFIG=null \
-    FVTT_COMPRESS_SOCKET=true \
-    FVTT_COMPRESS_STATIC=true \
-    FVTT_CSS_THEME=dark \
+    FVTT_AWS_CONFIG= \
+    FVTT_COMPRESS_SOCKET=false \
+    FVTT_COMPRESS_STATIC=false \
+    FVTT_CSS_THEME=foundry \
     FVTT_DELETE_NEDB=false \
     FVTT_FULLSCREEN=false \
-    FVTT_HOSTNAME=foundry-v14.onecof5.com \
+    FVTT_HOSTNAME=localhost \
     FVTT_HOT_RELOAD=false \
     FVTT_LANGUAGE=en.core \
-    FVTT_LOCAL_HOSTNAME= \
-    FVTT_MINIFY_STATIC_FILES:=false \
+    FVTT_LOCAL_HOSTNAME=localhost \
+    FVTT_MINIFY_STATIC_FILES=false \
     FVTT_NOUPDATE=false \
     FVTT_PASSWORD_SALT= \
     FVTT_PORT=30000 \

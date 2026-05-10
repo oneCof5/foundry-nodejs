@@ -118,7 +118,7 @@ log_debug() {
   _log_write "DEBUG" "${COLOR_DEBUG}" "$@"
 }
 
-log_info()  { _log_write "INFO"  "${COLOR_INFO}"  "$@"; }
-log_warn()  { _log_write "WARN"  "${COLOR_WARN}"  "$@"; }
+log_info()  { _log_write "INFO"  "${COLOR_INFO}" " $@"; }
+log_warn()  { _log_write "WARN"  "${COLOR_WARN}" " $@"; }
 log_error() { _log_write "ERROR" "${COLOR_ERROR}" "$@"; }
 log_fatal() { _log_write "FATAL" "${COLOR_ERROR}" "$@"; }

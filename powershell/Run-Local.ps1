@@ -174,9 +174,10 @@ function Get-SecretMountArgs {
     param([string]$SecretRoot)
 
     $requiredSecrets = @(
-        @{ Source = "foundry_release_url"; Target = "/run/secrets/foundry_release_url" },
         @{ Source = "admin_password"; Target = "/run/secrets/foundry_admin_password" },
-        @{ Source = "license_key";    Target = "/run/secrets/foundry_license_key" }
+        @{ Source = "license_key";    Target = "/run/secrets/foundry_license_key" },
+        @{ Source = "release_url"; Target = "/run/secrets/foundry_release_url" },
+        @{ Source = "password_salt"; Target = "/run/secrets/foundry_password_salt" }
     )
 
     if (-not (Test-Path -LiteralPath $SecretRoot)) {
@@ -208,9 +209,10 @@ function Get-SecretMountArgs {
         }
         Write-Host ""
         Write-Host "Create secret files with:" -ForegroundColor Cyan
-        Write-Host "  Set-Content -Path '$SecretsPath\foundry_release_url' -NoNewline -Value 'the temp URL for Node OS from foundryvtt.com'" -ForegroundColor Gray
         Write-Host "  Set-Content -Path '$SecretsPath\admin_password' -NoNewline -Value 'your_admin_password'" -ForegroundColor Gray
         Write-Host "  Set-Content -Path '$SecretsPath\license_key' -NoNewline -Value 'your_license_key'" -ForegroundColor Gray
+        Write-Host "  Set-Content -Path '$SecretsPath\password_salt' -NoNewline -Value 'the custom password salt'" -ForegroundColor Gray
+        Write-Host "  Set-Content -Path '$SecretsPath\release_url' -NoNewline -Value 'the temp URL for Node OS from foundryvtt.com'" -ForegroundColor Gray
         exit 1
     }
 
@@ -263,6 +265,7 @@ if ($hasCachedArchive) {
 
 $adminPassword = ""
 $licenseKeyPlain = ""
+$passwordSalt = ""
 
 if ($UseSecrets) {
     Write-Step "Setting up secrets..."
@@ -278,6 +281,7 @@ else {
     $adminPassword = Read-Host "Admin Password (for Foundry UI)"
     $licenseKeySecure = Read-Host "License Key (optional)" -AsSecureString
     $licenseKeyPlain = Convert-SecureStringToPlainText -SecureValue $licenseKeySecure
+    $passwordSalt = Read-Host "Password Salt for Admin Password encryption"
 
     if (-not $hasCachedArchive -and [string]::IsNullOrWhiteSpace($ReleaseUrl)) {
         Write-Host ""
@@ -323,6 +327,7 @@ $runArgs = @(
     "run",
     "-d",
     "--name", $ContainerName,
+    "--hostname", $ContainerName,
     "-p", "${Port}:30000",
     "-e", "TZ=America/New_York",
     "-e", "PUID=1000",
@@ -355,11 +360,6 @@ if ($UseSecrets) {
     $runArgs += $secretMountArgs
 }
 else {
-    if (-not [string]::IsNullOrWhiteSpace($ReleaseUrl)) {
-        $runArgs += "-e"
-        $runArgs += "FVTT_RELEASE_URL=$ReleaseUrl"
-    }
-
     if (-not [string]::IsNullOrWhiteSpace($adminPassword)) {
         $runArgs += "-e"
         $runArgs += "FVTT_ADMIN_PASSWORD=$adminPassword"
@@ -369,6 +369,17 @@ else {
         $runArgs += "-e"
         $runArgs += "FVTT_LICENSE_KEY=$licenseKeyPlain"
     }
+
+    if (-not [string]::IsNullOrWhiteSpace($passwordSalt)) {
+        $runArgs += "-e"
+        $runArgs += "FVTT_PASSWORD_SALT=$passwordSalt"
+    }
+
+    if (-not [string]::IsNullOrWhiteSpace($ReleaseUrl)) {
+        $runArgs += "-e"
+        $runArgs += "FVTT_RELEASE_URL=$ReleaseUrl"
+    }
+
 }
 
 $runArgs += @(
@@ -392,9 +403,6 @@ Write-Detail "Data:      $DataPath"
 Write-Detail "Logs:      $LogsPath"
 Write-Detail "Version:   $Version"
 Write-Host ""
-Write-Host "==================================================="
-Write-Host "Docker Run Command"
-Write-Host "$runArgs"
 
 if ($hasCachedArchive) {
     Write-Detail "Install:   Cached archive"
@@ -418,6 +426,17 @@ Write-Host ""
 Write-Step "Starting container..."
 & docker @runArgs
 
+# DEBUG
+$debugDockerCommand = 'docker ' + ($runArgs | ForEach-Object {
+    if ($_ -match '[\s"]') {
+        '"' + ($_ -replace '"', '\"') + '"'
+    } else {
+        $_
+    }
+}) -join ' '
+
+Write-Host "Docker run Command: $debugDockerCommand" -ForegroundColor DarkGray
+
 if ($LASTEXITCODE -ne 0) {
     Write-Error-Custom "Failed to start container"
     exit $LASTEXITCODE
@@ -428,7 +447,7 @@ Start-Sleep -Seconds 3
 
 Write-Host ""
 Write-Host "===================================================" -ForegroundColor Cyan
-Write-Host " Container Logs                                     " -ForegroundColor Cyan
+Write-Host " Container Logs                                    " -ForegroundColor Cyan
 Write-Host "===================================================" -ForegroundColor Cyan
 Write-Host ""
 

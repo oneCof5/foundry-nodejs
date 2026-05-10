@@ -21,7 +21,7 @@ services:
       FVTT_PORT: 30000
       FVTT_VERBOSE_LOGGING: "false"
 
-      # Install source: either set this to a timed URL, or pre-seed /data/FVTT
+      # Install source: either set this to a timed URL, or pre-seed /data/InstallerCache
       FVTT_RELEASE_URL: ""
 
       # You can set these directly, but secrets/bind-mounted secret files are better

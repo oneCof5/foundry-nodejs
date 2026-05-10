@@ -9,7 +9,7 @@ source "${SCRIPT_DIR}/logging.sh"
 : "${FVTT_VERBOSE_LOGGING}"
 : "${FVTT_LOG_BASE}"
 
-FVTT_CACHE_DIR="/data/FVTT"
+FVTT_CACHE_DIR="/data/InstallerCache"
 mkdir -p "$FVTT_CACHE_DIR"
 
 mapfile -t archives < <(

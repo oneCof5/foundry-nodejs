@@ -12,8 +12,7 @@ VERSION="${1:?version required}"
 : "${FVTT_VERBOSE_LOGGING}"
 : "${FVTT_LOG_BASE}"
 
-APP_DIR=
-ZIP_ARCHIVE_DIR="/data/FVTT"
+ZIP_ARCHIVE_DIR="/data/InstallerCache"
 INSTALLER_ZIP="${ZIP_ARCHIVE_DIR}/FoundryVTT-Node-${VERSION}.zip"
 
 mkdir -p "$ZIP_ARCHIVE_DIR"
@@ -59,7 +58,7 @@ else
     log_error "  - FVTT_RELEASE_URL"
     log_error "  - FVTT_RELEASE_URL_FILE"
     log_error "  - /run/secrets/foundry_release_url"
-    log_error "  - Pre-seed /data/FVTT with one of:"
+    log_error "  - Pre-seed /data/InstallerCache with one of:"
     log_error "      FoundryVTT-Node-${VERSION}.zip"
     log_error "      Foundry-Node-${VERSION}.zip"
     exit 1
@@ -87,17 +86,32 @@ if [ "$ZIP_SIZE" -lt 1000000 ]; then
   exit 1
 fi
 
-log_info "Installing Foundry VTT ${VERSION} into {$FVTT_APP_DIR}"
-#mkdir -p "$FVTT_APP_DIR"
+log_info "Installing Foundry VTT ${VERSION} into ${FVTT_APP_DIR}"
 find "$FVTT_APP_DIR" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
 
-unzip -q "$FOUNDRY_ZIP" -d "$FVTT_APP_DIR"
+# setup progession based logging
+mapfile -t entries < <(unzip -Z1 "$FOUNDRY_ZIP")
+total=${#entries[@]}
+log_debug "Extracting ${total} file(s) into ${FVTT_APP_DIR}..."
+
+count=0
+for name in "${entries[@]}"; do
+  unzip -q "$FOUNDRY_ZIP" "$name" -d "$FVTT_APP_DIR"
+  count=$((count + 1))
+  if (( count % 500 == 0 || count == total )); then
+    log_debug "Extraction progress: $count / $total files"
+  fi
+done
+
+log_debug "Install command: unzip -q ${FOUNDRY_ZIP} -d ${FVTT_APP_DIR}"
+unzip -oq "$FOUNDRY_ZIP" -d "$FVTT_APP_DIR"
+log_debug "Unzip completed."
 
 if [ ! -f "$FVTT_APP_DIR/main.js" ] && [ ! -f "$FVTT_APP_DIR/resources/app/main.mjs" ]; then
   log_error "Installation failed; no Foundry entrypoint found"
   exit 1
 fi
 
-echo "$VERSION" > "{$FVTT_APP_DIR}/.version"
+echo "$VERSION" > "${FVTT_APP_DIR}/.version"
 log_info "Foundry VTT ${VERSION} installed successfully"
 /opt/foundry/scripts/prune-cache.sh
