@@ -42,20 +42,29 @@ ADMIN_FILE="$CONFIG_DIR/admin.txt"
 
 encrypt_admin_password() {
   plaintext="$1"
-  salt="${FVTT_PASSWORD_SALT}"
+  low_sodium="17c4f39053ac5a50d5797c665ad1f4e6"
+  # Use FOUNDRY_PASSWORD_SALT if set and non-empty; else fallback
+  salt="${FOUNDRY_PASSWORD_SALT:-}"
+  if [ -z "$salt" ]; then
+    salt="$low_sodium"
+  fi
 
-  printf '%s' "$plaintext" | tr -d '\r\n' | {
-    IFS= read -r trimmed
-    openssl kdf -keylen 64 \
-      -kdfopt digest:SHA512 \
-      -kdfopt pass:"$trimmed" \
-      -kdfopt salt:"$salt" \
-      -kdfopt iter:1000 \
-      PBKDF2
-  } \
-  | tr -d '\r\n' \
-  | tr -d ':' \
-  | tr '[:upper:]' '[:lower:]'
+  # Trim surrounding whitespace and feed into PBKDF2
+  printf '%s' "$plaintext" \
+    | sed -e 's/^[[:space:]]*//' -e 's/[[:space:]]*$//' \
+    | {
+      IFS= read -r trimmed || true
+      # OpenSSL PBKDF2 (kdf) to derive 64-byte key with SHA512 and 1000 iterations
+      openssl kdf -keylen 64 \
+        -kdfopt digest:SHA512 \
+        -kdfopt pass:"$trimmed" \
+        -kdfopt salt:"$salt" \
+        -kdfopt iter:1000 \
+        PBKDF2
+    } \
+    | tr -d '\r\n' \
+    | tr -d ':' \
+    | tr '[:upper:]' '[:lower:]'
 }
 
 # Ensure admin.txt exists
