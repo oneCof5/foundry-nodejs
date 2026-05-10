@@ -7,7 +7,6 @@ source "${SCRIPT_DIR}/logging.sh"
 
 VERSION="${1:?version required}"
 
-: "${FVTT_RELEASE_URL_FILE:=/run/secrets/foundry_release_url}}"
 : "${FVTT_RELEASE_URL}"
 : "${FVTT_VERBOSE_LOGGING}"
 : "${FVTT_LOG_BASE}"
@@ -26,8 +25,6 @@ read_secret() {
     printf '%s' "$fallback"
   fi
 }
-
-export FVTT_RELEASE_URL="$(read_secret "$FVTT_RELEASE_URL_FILE" "$FVTT_RELEASE_URL")"
 
 find_cached_zip() {
   local version="$1"
@@ -58,9 +55,7 @@ else
     log_error "  - Obtaine a timed-url obtained from https://foundryvtt.com"
     log_error "    - paste that url into the /run/secrets/release_url file"
     log_error "    - restart the container (timed link only valid for 300 seconds)"
-    log_error "  - Pre-seed /data/InstallerCache with one of:"
-    log_error "      FoundryVTT-Node-${VERSION}.zip"
-    log_error "      Foundry-Node-${VERSION}.zip"
+    log_error "  - Pre-seed /data/InstallerCache with a Node zip installer named FoundryVTT-Node-${VERSION}.zip"
     exit 1
   fi
 

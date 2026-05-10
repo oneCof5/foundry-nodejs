@@ -70,7 +70,7 @@ param(
     [string]$DataPath = "D:\fvtt\data",
     [string]$LogsPath = "D:\fvtt\logs",
     [string]$SecretsPath = "D:\fvtt\secrets",
-    [string]$Version = "14.161",
+    [string]$Version = "14.361",
     [string]$World = "",
     [switch]$ContainerVerbose,
     [switch]$UseSecrets,

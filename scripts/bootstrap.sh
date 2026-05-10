@@ -6,8 +6,6 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 source "${SCRIPT_DIR}/logging.sh"
 
 : "${FVTT_VERSION}"
-: "${FVTT_ADMIN_PASSWORD_FILE:=/run/secrets/foundry_admin_password}"
-: "${FVTT_LICENSE_KEY_FILE:=/run/secrets/foundry_license_key}"
 : "${FVTT_ADMIN_PASSWORD}"
 : "${FVTT_LICENSE_KEY}"
 : "${FVTT_VERBOSE_LOGGING}"
