@@ -54,10 +54,10 @@ else
   log_info "No cached archive found for Foundry Node ${VERSION}"
 
   if [ -z "$FVTT_RELEASE_URL" ]; then
-    log_error "Provide one of the following install sources:"
-    log_error "  - FVTT_RELEASE_URL"
-    log_error "  - FVTT_RELEASE_URL_FILE"
-    log_error "  - /run/secrets/foundry_release_url"
+    log_error "Do one of the following:"
+    log_error "  - Obtaine a timed-url obtained from https://foundryvtt.com"
+    log_error "    - paste that url into the /run/secrets/release_url file"
+    log_error "    - restart the container (timed link only valid for 300 seconds)"
     log_error "  - Pre-seed /data/InstallerCache with one of:"
     log_error "      FoundryVTT-Node-${VERSION}.zip"
     log_error "      Foundry-Node-${VERSION}.zip"
