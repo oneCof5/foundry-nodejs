@@ -108,7 +108,7 @@ function Test-CommandExists {
     return $null -ne (Get-Command $Name -ErrorAction SilentlyContinue)
 }
 
-function Ensure-Directory {
+function Test-DirectoryExists {
     param(
         [string]$Path,
         [string]$Label
@@ -250,9 +250,9 @@ if ($existingContainer) {
     }
 }
 
-Ensure-Directory -Path $AppPath -Label "app"
-Ensure-Directory -Path $DataPath -Label "data"
-Ensure-Directory -Path $LogsPath -Label "logs"
+Test-DirectoryExists -Path $AppPath -Label "app"
+Test-DirectoryExists -Path $DataPath -Label "data"
+Test-DirectoryExists -Path $LogsPath -Label "logs"
 
 $cacheInfo = Get-CachedArchiveInfo -BaseDataPath $DataPath -FoundryVersion $Version
 $hasCachedArchive = $cacheInfo.HasArchive
