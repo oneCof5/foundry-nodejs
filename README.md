@@ -92,8 +92,6 @@ user.
 
 | ENV VAR                      | REQUIRED | DEFAULT | NOTES                    |
 | ---------------------------- | -------- | ------- | ------------------------ |
-| FVTT_VERSION | :white_check_mark: |  | The major and minor version (e.g. 14.361) |
-| FVTT_KEEP_PRIOR_COPIES | :x: | 5 | How many prior versions to retain in the /InstallerCache |
 | FVTT_AWS_CONFIG | :x: | | `awsConfig` value.  |
 | FVTT_COMPRESS_SOCKET | :x: | false | `compressSocket` Admin UI: **Server Configuration:Compress Web Socket Data**. *Enable compression of data sent from the server to the client via websocket. This is recommended for network performance.*  |
 | FVTT_COMPRESS_STATIC | :x: | false | `compressStatic` Admin UI: **Server Configuration:Compress Static Files**. *Compress files served by the Foundry Virtual Tabletop web server before sending them to the client to reduce the amount of data transferred.* |
