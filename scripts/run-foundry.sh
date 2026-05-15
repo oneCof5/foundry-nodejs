@@ -23,7 +23,6 @@ VERSION="${1:?version required}"
 : "${FVTT_LICENSE_KEY}"
 : "${FVTT_PASSWORD_SALT}"
 : "${FVTT_VERBOSE_LOGGING}"
-: "${FVTT_LOG_BASE}"
 : "${FVTT_APP_DIR}"
 : "${FVTT_DATA_DIR}"
 
