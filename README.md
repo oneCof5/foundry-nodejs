@@ -4,7 +4,7 @@ My personal dockerized [FoundryVTT](http://foundryvtt.com) server using node.js
 
 > [!NOTE]
 > **Credit to Felddy**
-> Much of the logic and concepts are borrowed liberally from [felddy/foundryvtt-docker](https://github.com/felddy/foundryvtt-docker). 
+> Much of the logic and concepts are borrowed liberally from [felddy/foundryvtt-docker](https://github.com/felddy/foundryvtt-docker).
 > I happily utilized Felddy's image, but wanted a personalized version for my
 > own for hobbyist purposes.
 
@@ -28,7 +28,7 @@ The zip installer may be predownloaded from FoundryVTT via:
 > hostname is set, Docker assigns a random container ID on each container
 > start.  This causes license verification to fail.
 
-```
+``` sh
 docker run -d 
     --name foundryvtt-local 
     --hostname foundryvtt-local 
@@ -59,20 +59,20 @@ This container supports passing sensitive values via [Docker secrets](https://do
 The secrets are read from the container's `/run/secrets/foundry_${secret-name}`
 location mapped via volume mounts.
 
-| ENV VAR                      | REQUIRED | DEFAULT | NOTES                    |
+| ENV VAR | REQUIRED | DEFAULT | NOTES |
 | ---------------------------- | -------- | ------- | ------------------------ |
-| FVTT_ADMIN_PASSWORD | :white_check_mark: |  | Assign the admin password.  |
-| FVTT_PASSWORD_SALT | :x: |  | A customized password salt. |
-| FVTT_LICENSE_KEY | :white_check_mark: |  | Assign the FoundryVTT license key |
-| FVTT_RELEASE_URL | :white_check_mark: |  | The timed URL to download a new version of FoundryVTT (Node) |
+| FVTT_ADMIN_PASSWORD | :white_check_mark: | | Assign the admin password. |
+| FVTT_PASSWORD_SALT | :x: | | A customized password salt. |
+| FVTT_LICENSE_KEY | :white_check_mark: | | Assign the FoundryVTT license key |
+| FVTT_RELEASE_URL | :white_check_mark: | | The timed URL to download a new version of FoundryVTT (Node) |
 
 ### Container Operations
 
-| ENV VAR                      | REQUIRED | DEFAULT | NOTES                    |
+| ENV VAR | REQUIRED | DEFAULT | NOTES |
 | ---------------------------- | -------- | ------- | ------------------------ |
 | PUID | :white_check_mark: | 911 | The user id to run the container against (e.g. 99 for nobody) |
 | PGID | :white_check_mark: | 911 | The group id to run the container against (e.g. 100 for users) |
-| FVTT_VERSION | :white_check_mark: |  | The major and minor version (e.g. 14.361) |
+| FVTT_VERSION | :white_check_mark: | | The major and minor version (e.g. 14.361) |
 | FVTT_KEEP_PRIOR_COPIES | :x: | 5 | How many prior versions to retain in the /InstallerCache |
 | FVTT_LOCAL_HOSTNAME | :x: | localhost | |
 | FVTT_VERBOSE_LOGGING | :x: | false | Capture Debug logging? |
@@ -86,22 +86,22 @@ location mapped via volume mounts.
 ### Options.json
 
 See **Using Options.json** on [Application Configuration](https://foundryvtt.com/article/configuration/)  
-Where indicated below as 'Admin UI' in notes below, this option is available 
-via the Config (gears option) in the WebUI while logged in as an adminstrator 
+Where indicated below as 'Admin UI' in notes below, this option is available
+via the Config (gears option) in the WebUI while logged in as an adminstrator
 user.
 
-| ENV VAR                      | REQUIRED | DEFAULT | NOTES                    |
+| ENV VAR | REQUIRED | DEFAULT | NOTES |
 | ---------------------------- | -------- | ------- | ------------------------ |
 | FVTT_AWS_CONFIG | :x: | | `awsConfig` value.  |
-| FVTT_COMPRESS_SOCKET | :x: | false | `compressSocket` Admin UI: **Server Configuration:Compress Web Socket Data**. *Enable compression of data sent from the server to the client via websocket. This is recommended for network performance.*  |
+| FVTT_COMPRESS_SOCKET | :x: | false | `compressSocket` Admin UI: **Server Configuration:Compress Web Socket Data**. *Enable compression of data sent from the server to the client via websocket. This is recommended for network performance.* |
 | FVTT_COMPRESS_STATIC | :x: | false | `compressStatic` Admin UI: **Server Configuration:Compress Static Files**. *Compress files served by the Foundry Virtual Tabletop web server before sending them to the client to reduce the amount of data transferred.* |
-| FVTT_HOSTNAME | :x: | fvtt.mydomain.com  | `hostname` value. |
+| FVTT_HOSTNAME | :x: | fvtt.mydomain.com | `hostname` value. |
 
 ### Command Line Flags
 
 See **Command Line Flag Listing** on [Application Configuration](https://foundryvtt.com/article/configuration/)  
 
-| ENV VAR                      | REQUIRED | DEFAULT | NOTES                    |
+| ENV VAR | REQUIRED | DEFAULT | NOTES |
 | ---------------------------- | -------- | ------- | ------------------------ |
 | FVTT_NOUPDATE | :x: | true | This disables the package updating system for the core software, preventing Foundry VTT from checking if there are new core software updates available. |
-| FVTT_WORLD | :x: |  | The id of the default world which the software will attempt to launch upon container start. |
+| FVTT_WORLD | :x: | | The id of the default world which the software will attempt to launch upon container start. |
