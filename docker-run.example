@@ -1,18 +1,18 @@
-docker create
-  --name='foundryvtt'
-  --net='foundrynet'
-  -e TZ="America/New_York"
-  -e 'FVTT_VERSION'='14.161'
-  -e 'FVTT_KEEP_PRIOR_COPIES'='5'
-  -e 'FVTT_PORT'='30000'
-  -e 'FVTT_WORLD_ID'='empire-of-ghouls'
-  -e 'FOUNDRY_NODE_RELEASE_URL'=''
-  -e 'PUID'='99'
-  -e 'PGID'='100'
-  -p '30000:30000/tcp'
-  -v '/mnt/user/data/foundryvtt':'/data':'rw'
-  -v '/mnt/user/appdata/foundryvtt/secrets/admin_password':'/run/secrets/foundry_admin_password':'ro'
-  -v '/mnt/user/appdata/foundryvtt/secrets/license_key':'/run/secrets/foundry_license_key':'ro'
-  -v '/mnt/user/appdata/foundryvtt/secrets/email':'/run/secrets/foundry_email':'rw'
-  -v '/mnt/user/appdata/foundryvtt/secrets/password':'/run/secrets/foundry_password':'rw'
-  -v '/mnt/user/appdata/foundryvtt/app':'/foundryvtt':'rw' 'ghcr.io/onecof5/foundry-nodejs:latest' 
+docker run -d 
+    --name foundryvtt-local 
+    --hostname foundryvtt-local 
+    -p 30000:30000 
+    -e TZ=America/New_York 
+    -e PUID=1000 
+    -e PGID=1000 
+    -e FVTT_VERSION=14.361 
+    -e FVTT_PORT=30000 
+    -e FVTT_HOSTNAME=mydomain.com 
+    -v /data/fvtt/secrets/admin_password:/run/secrets/foundry_admin_password:ro 
+    -v /data/fvtt/secrets/license_key:/run/secrets/foundry_license_key:ro 
+    -v /data/fvtt/secrets/release_url:/run/secrets/foundry_release_url:ro 
+    -v /data/fvtt/secrets/password_salt:/run/secrets/foundry_password_salt:ro 
+    -v /data/fvtt/data:/data 
+    -v /data/fvtt/logs:/logs 
+    -v /cache/fvtt/app:/foundryvtt 
+    foundryvtt-nodejs:local
