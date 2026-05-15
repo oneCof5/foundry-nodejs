@@ -5,11 +5,13 @@ SCRIPT_DIR="$(CDPATH= cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck source=/dev/null
 source "${SCRIPT_DIR}/logging.sh"
 
+: "${FVTT_APP_DIR}"
+: "${FVTT_DATA_DIR}"
+: "${FVTT_LOGS_DIR}"
 : "${FVTT_VERSION}"
 : "${FVTT_ADMIN_PASSWORD}"
 : "${FVTT_LICENSE_KEY}"
 : "${FVTT_VERBOSE_LOGGING}"
-: "${FVTT_LOG_BASE}"
 
 read_secret_required() {
   local file_path="$1"
@@ -60,8 +62,8 @@ else
   log_warn "Existing version not found; installing new instance by default"
 fi
 
-APP_MAIN_JS="/foundryvtt/main.js"
-APP_MAIN_MJS="/foundryvtt/resources/app/main.mjs"
+APP_MAIN_JS="${FVTT_APP_DIR}/main.js"
+APP_MAIN_MJS="${FVTT_APP_DIR}/resources/app/main.mjs"
 
 log_debug "Requested version: '$FVTT_VERSION'"
 log_debug "Installed version: '$INSTALLED_VERSION'"

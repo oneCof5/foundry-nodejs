@@ -107,6 +107,6 @@ if [ ! -f "$FVTT_APP_DIR/main.js" ] && [ ! -f "$FVTT_APP_DIR/resources/app/main.
   exit 1
 fi
 
-echo "$VERSION" > "${FVTT_APP_DIR}/.version"
+echo "$VERSION" > "${FVTT_DATA_DIR}/.version"
 log_info "Foundry VTT ${VERSION} installed successfully"
 /opt/foundry/scripts/prune-cache.sh
