@@ -8,8 +8,8 @@ source "${SCRIPT_DIR}/logging.sh"
 VERSION="${1:?version required}"
 
 : "${FVTT_RELEASE_URL}"
-: "${FVTT_VERBOSE_LOGGING}"
-: "${FVTT_LOG_BASE}"
+#: "${FVTT_VERBOSE_LOGGING}"
+#: "${FVTT_LOG_BASE}"
 
 ZIP_ARCHIVE_DIR="/data/InstallerCache"
 INSTALLER_ZIP="${ZIP_ARCHIVE_DIR}/FoundryVTT-Node-${VERSION}.zip"
